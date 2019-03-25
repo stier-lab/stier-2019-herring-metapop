@@ -174,7 +174,7 @@ ggplot(s2,aes(x=year,y=SHI,group=section_name))+
   #               breaks=c(10^2,10^4,10^6),
   #               labels = trans_format("log10", math_format(10^.x)))+  
   scale_y_continuous(labels=comma)+
-  theme_Publication()+
+  # theme_Publication()+
   ylab("Spawn Index")+
   xlab("Year")
 

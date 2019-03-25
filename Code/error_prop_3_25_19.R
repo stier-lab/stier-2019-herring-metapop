@@ -19,7 +19,7 @@ library(ggpubr)
 #https://drive.google.com/open?id=1CBucJlezeihO1JuxzayBDuO1xENah3gj
 
 #setwd("..")
-load("diag_equal_design_c_noUsig_2q_pcnorm2.RData")
+load(here("output","diag_equal_design_c_noUsig_2q_pcnorm2.RData"))
 
 #fwiw i should try piggyback to get everything into the repo but haven't tried yet...
 #https://cran.r-project.org/web/packages/piggyback/vignettes/intro.html
@@ -35,7 +35,8 @@ createMcmcList = function(model) {
 
 myList<-createMcmcList(model) #mcmc output 
 
-
+#set breaks for time series plots
+bk<-seq(1950,2015,by=10)
 
 ## ========================years, sites, and mcmcm chains================================##
 
@@ -50,6 +51,7 @@ n.iter = 1000000
 
 #number of recorded mcmc
 runL <- n.chains*(n.iter-n.burnin)/n.thin
+
 
 ## ========================PDO TIME SERIES ================================##
 
@@ -81,12 +83,19 @@ hist(pdocoef)
 #   THEN summarize.
 
 # This is how to do it for the pdocoef part. 
-pdo_matrix<- pdocoef %*% t(pdo3) #matrix match
 
+#matrix match multiply the pdo coefficient from each sampe, times the pdo estimate for each time step
+#this gives a 4000 row matrix with 66 columns, one per year
+pdo_matrix<- pdocoef %*% t(pdo3)
+
+#then estimate for each year, the quantile of the pdo effect 
 pdodf <- t(apply(pdo_matrix,2,
                         quantile,probs=c(0.025,0.05,0.25,0.5,0.75,0.95,0.975)))
+
+#rename the clumn headers
 colnames(pdodf) <- c("x.025","x.05","x.25","Median","x.75","x.95","x.975")
 
+#created a data frame from the matrix
 pdodf2<-data.frame(year=as.numeric(names(pdo3)), site=rep("pdocoef",nrow(pdodf)),pdodf)
 pdodf2$hc<-ifelse(pdodf2$Median>0,"hot","cold")
 
@@ -103,6 +112,8 @@ pdotsgg<-ggplot(pdodf2,aes(x=year,y=Median))+
 
 print(pdotsgg)
 
+ggsave(here("output","pdotsgg.pdf"))
+
 
 ###-- OLE: 
 # The PDO calculations you do are largely correct.  When PDO = 0, ANYTHING x PDO = 0.  So it doesn't really matter
@@ -115,41 +126,6 @@ print(pdotsgg)
 ### Remember to always calculate derived quantities for each draw of the MCMC, then summarize.  
 ### If you find yourself taking a mean or a median of a parameter then multiplying it by something...
 ### you should stop, do the multiplication for each MCMC value, then calculate the summary
-
-
-#################################################################
-#adrian's original.
-distpdoci<-smedian.hilow(pdocoef,conf.int=0.95)
-distpdoiqr<-smedian.hilow(pdocoef,conf.int=0.5)
-
-
-pdodf<-data.frame("pdo"=pdo3,
-                  "medianci"=distpdoci[1]*pdo3,
-                  "maxci"=distpdoci[3]*pdo3,
-                  "minci"=distpdoci[2]*pdo3,
-                  "maxiqr"=distpdoiqr[3]*pdo3,
-                  "miniqr"=distpdoiqr[2]*pdo3
-)
-
-pdodf$year<-as.numeric(rownames(pdodf))
-pdodf2<-data.frame(site=rep("pdocoef",nrow(pdodf)),pdodf)
-pdodf2$hc<-ifelse(pdodf2$medianci>0,"hot","cold")
-
-pdotsgg<-ggplot(pdodf2,aes(x=year,y=medianci))+
-  geom_hline(yintercept=0)+
-  geom_ribbon(aes(ymin=minci,ymax=maxci),fill="grey70",alpha=0.2)+
-  geom_ribbon(aes(ymin=miniqr,ymax=maxiqr),fill="grey")+
-  geom_line(lty=2)+
-  geom_point(aes(colour=hc))+
-  theme_pubr()+
-  ylab("PDO Effect")+
-  xlab("Year")
-  #scale_x_continuous(breaks=bk)
-
-
-print(pdotsgg)
-
-
 
 ## ========================Spawn and Fishing TIME SERIES ================================##
 
@@ -197,11 +173,7 @@ logcatch<-log(ctab2+1)
 ## ========================Biomass by subpopulation witrh error propagation ================================##
 
 
-xpop<-melt(model$BUGSoutput$sims.array[,,"X"])
-
-
 #plot out individual stocklets with halo confidence intervals 
-
 
 edf1<-melt(model$BUGSoutput$sims.array[,,colnames(myList[[1]])[which(colnames(myList[[1]])=="X[1,1]"):which(colnames(myList[[1]])=="X[66,11]")]])
 names(edf1)<-c("num","chain","response","value")
@@ -240,10 +212,11 @@ ggplot(xdat,aes(x=year,y=median))+
   # theme_acs()+
   ylab("Estimated Biomass")+
   xlab("Year")+
-  facet_wrap(~section,scales="free")+
+  facet_wrap(~section,scales="free",ncol=3)+
   scale_x_continuous(breaks=bk)+
   scale_y_continuous(labels=comma)
 
+ggsave(here("output","estimated_herring_biomass.pdf"),width=20,height=15)
 
 
 
@@ -375,11 +348,17 @@ names(fdf) <- c("year","site","median","upper","lower")
 
 
 ggplot(fdf,aes(x=year,y=median))+
+  geom_point()+
   geom_line()+
-  geom_ribbon(aes(ymin=lower,ymax=upper),fill="blue",alpha=0.2)+
-  facet_wrap(~site)+
+  geom_errorbar(aes(ymin=lower, ymax=upper), width=.2)+
+  # geom_ribbon(aes(ymin=lower,ymax=upper),fill="blue",alpha=0.2)+
+  facet_wrap(~site,ncol=3)+
   theme_pubr()+
-  ylab("Proportion Caught")
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab("Proportion Caught")+
+  scale_x_continuous(breaks=bk)
+  
+ggsave(here("output","fishing_ts.pdf"),width=20,height=15)
 
 fdf_fe<-subset(fdf,fdf$median>0)
 
