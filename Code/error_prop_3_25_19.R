@@ -14,8 +14,13 @@ library(ggpubr)
 
 
 ## ========================Load Model Output================================##
+
+# download the model output here
+https://drive.google.com/open?id=1CBucJlezeihO1JuxzayBDuO1xENah3gj
 load("diag_equal_design_c_noUsig_2q_pcnorm2.RData")
 
+#fwiw i should try piggyback to get everything into the repo but haven't tried yet...
+#https://cran.r-project.org/web/packages/piggyback/vignettes/intro.html
 
 createMcmcList = function(model) {
   McmcArray = as.array(model$BUGSoutput$sims.array)
