@@ -14,6 +14,7 @@ library(ecofolio)
 library (synchrony)
 library(here)
 library(scales)
+library(ggthemes)
 
 # install.packages(c("plyr", "reshape", "MuMIn", "robustbase", "devtools"))
 # devtools::install_github("ecofolio", username="seananderson")
@@ -21,11 +22,14 @@ library(scales)
 
 ## ========================LOAD Relevant Code================================##
 
-# setwd("~/Dropbox/Projects/In Progress/Herring_Haida_Gwaii/Herring-GitHub/Herring-Metapopulation-HG/Code")
-source('code/theme_publication.R')
-source('code/multiplot.R')
-  load("code/diag_equal_design_c_noUsig_2q_pcnorm2.RData")
-  
+setwd("/Volumes/GoogleDrive/My Drive/Stier Lab/People/Adrian Stier/Projects/In Progress/Herring_Haida_Gwaii/Code")
+load("diag_equal_design_c_noUsig_2q_pcnorm2.RData")
+
+source(here("code","theme_publication.R"))
+source(here("code","multiplot.R"))
+
+# load(here("code","diag_equal_design_c_noUsig_2q_pcnorm2.RData"))
+
 
 ## ========================LOAD Relevant Functions================================## 
 
@@ -94,7 +98,7 @@ nSites = 11
 ## ==================
 ##  Load PDO time series and subset to 1940-2015
 ## ==================
-pdo<-read.csv("data/pdo.csv") 
+pdo<-read.csv(here("data","pdo.csv"))
 pdosummer<-subset(pdo,month %in% c(3,4,5,6)) #average march<-june
 pdoxb<-c(tapply(pdosummer$Value,list(pdosummer$year),mean))
 pdo2<-pdoxb[97:162] #1940-2015
@@ -103,7 +107,7 @@ pdo2<-pdoxb[97:162] #1940-2015
 ## ==================
 ##  Load Spawn Index time series
 ## ==================
-x <- read.csv("data/HG_Spawn_Survey_1940_2015.csv")
+x <- read.csv(here("data","HG_Spawn_Survey_1940_2015.csv"))
 x <- x[c(1,3,13,14,15,16)]
 x$presabs <-ifelse(x$SHI>0,1,0)
 
@@ -127,7 +131,7 @@ names(ym)<-c("crap","site","logSHI","time")
 ## ==================
 ##  Load Catch time series
 ## ==================
-c <- read.csv("data/herring_catch_local2015.csv")
+c <- read.csv(here("data","herring_catch_local2015.csv"))
 yr_c<-unique(c$Year)
 c$presabs <-ifelse(c$TotalCatch>0,1,0)
 
@@ -272,9 +276,6 @@ xscalegg<-ggplot()+
 print(xscalegg)
 
 
-
-#*** remove the two sites tasu and naden from this plot 
-
 ## ==================
 ##  Fig 2bc ccf of pre-fishery biomass (Z) histogram and tile plot
 ## ==================
@@ -338,7 +339,7 @@ ccfmat<-ggplot(cdf,aes(x=Var1,y=Var2,fill=value,colour=value))+
 multiplot(xccfgg,ccfmat,cols=2)
 
 bottom_row <- plot_grid(xccfgg,ccfmat,labels=c('B','C'))
-plot_grid(xscalegg,bottom_row,labels=c('A',''),align="h",ncol=1)
+plot_grid(xscalegg,bottom_row,labels=c('A',''),ncol=1)
 
 
 ## ==================
@@ -423,7 +424,7 @@ print(umuplot)
 
 
 ###PDO Coef Effect
-pdo<-read.csv("data/pdo.csv")
+pdo<-read.csv(here("data","pdo.csv"))
 pdosummer<-subset(pdo,month %in% c(3,4,5,6)) #average april<-june
 pdoxb<-c(tapply(pdosummer$Value,list(pdosummer$year),mean))
 pdo2<-pdoxb[87:162] #1940-20135
